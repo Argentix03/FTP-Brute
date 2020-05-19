@@ -3,7 +3,6 @@
 # threads have some overhead so i recommend not adding many threads if your password list is short for clean results
 # once a thread has succeeded there will be no more tries but you will have to grep for success between the already
 # failing threads that are failing while the one thread succeeding.
-# by Hoshea Yarden
 import ftplib
 import threading
 import time
