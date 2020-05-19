@@ -20,4 +20,4 @@ $ python3 ftp-cracker-cli.py --target 10.10.10.10 --port 21 --user ftpuser --pas
 |-u, --user \<username> | Username to try with.|
 |-P, --passlist \<password file> | Password file delimited by newlines|
 |-T, --threads \<number of threads> | the number of threads to run with. each thread has a timeout of 2 seconds.|
-|--ckean | only output success and ignore fails. Recommended!|
+|--clean | only output success and ignore fails. Recommended!|
