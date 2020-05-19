@@ -15,6 +15,7 @@ parser.add_argument('-u', '--user', help="target user")
 parser.add_argument('-P', '--passlist', help="password file")
 parser.add_argument('-T', '--threads', help="maximum thread count")
 parser.add_argument('--clean',action="store_true" , help="only print success login, running silently")
+parser.add_argument('--timeout', help="set the timeout for each connection")
 args = parser.parse_args()
 
 # validate all needed arguments are present
@@ -63,6 +64,10 @@ except FileExistsError:
      pass  # This is good! x doesnt overwrite and throws error on existing
 
 user = args.user
+if args.timeout:
+    timeout = args.timeout
+else:
+    timeout = 2
 
 if args.clean:
     verbose = False
@@ -80,7 +85,7 @@ def login(user, passwd, line):
     try:
         t = threading.current_thread()
         ftp = ftplib.FTP()
-        ftp.connect(target, 21, timeout=3)
+        ftp.connect(target, 21, timeout=timeout)
         status = ftp.lastresp
         ftp.login(user, passwd)
         status = ftp.lastresp
