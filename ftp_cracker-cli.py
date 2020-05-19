@@ -65,7 +65,10 @@ except FileExistsError:
 
 user = args.user
 if args.timeout:
-    timeout = args.timeout
+    if not args.timeout.isdigit():
+        print("timeout argument must be an integer")
+        exit()
+    timeout = int(args.timeout)
 else:
     timeout = 2
 
